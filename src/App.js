@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import emailjs from '@emailjs/browser';
 import './App.css';
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const formRef = useRef();
 
   // Smooth scrolling for navigation
   const scrollToSection = (sectionId) => {
@@ -11,6 +15,32 @@ const App = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    // EmailJS configuration
+    const serviceId = 'service_portfolio'; // 나중에 실제 서비스 ID로 변경
+    const templateId = 'template_portfolio'; // 나중에 실제 템플릿 ID로 변경
+    const publicKey = 'YOUR_PUBLIC_KEY'; // 나중에 실제 퍼블릭 키로 변경
+
+    emailjs.sendForm(serviceId, templateId, formRef.current, publicKey)
+      .then(() => {
+        setSubmitMessage('메시지가 성공적으로 전송되었습니다! 곧 연락드리겠습니다.');
+        formRef.current.reset();
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        setSubmitMessage('메시지 전송에 실패했습니다. 다시 시도해주세요.');
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+        setTimeout(() => setSubmitMessage(''), 5000);
+      });
   };
 
   // Projects data based on GitHub repositories
@@ -235,17 +265,43 @@ const App = () => {
               </div>
             </div>
             <div className="contact-form">
-              <form>
+              <form ref={formRef} onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <input type="text" placeholder="Your Name" required />
+                  <input 
+                    type="text" 
+                    name="from_name"
+                    placeholder="Your Name" 
+                    required 
+                  />
                 </div>
                 <div className="form-group">
-                  <input type="email" placeholder="Your Email" required />
+                  <input 
+                    type="email" 
+                    name="from_email"
+                    placeholder="Your Email" 
+                    required 
+                  />
                 </div>
                 <div className="form-group">
-                  <textarea placeholder="Your Message" rows="5" required></textarea>
+                  <textarea 
+                    name="message"
+                    placeholder="Your Message" 
+                    rows="5" 
+                    required
+                  ></textarea>
                 </div>
-                <button type="submit" className="btn btn-primary">Send Message</button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                </button>
+                {submitMessage && (
+                  <div className={`submit-message ${submitMessage.includes('성공') ? 'success' : 'error'}`}>
+                    {submitMessage}
+                  </div>
+                )}
               </form>
             </div>
           </div>
